@@ -80,6 +80,7 @@ const detailValueElements = WeatherDetails();
 
 
 function displayWeatherData(data) {
+    errorMessage.style.display = 'none';
     weatherInfo.style.display = 'block';
     temperatureElement.textContent = `${Math.round(data.main.temp)}°c`;
     descriptionElement.textContent = data.weather[0].description;
