@@ -6,11 +6,6 @@ const weatherIcon = document.querySelector('.weather-icon');
 const temperatureElement = document.querySelector('.temperature');
 const descriptionElement = document.querySelector('.description');
 const locationElement = document.querySelector('.location');
-const windSpeedElement = document.querySelector('.weather-detail:nth-child(1) .detail-value');
-const humidityElement = document.querySelector('.weather-detail:nth-child(2) .detail-value');
-const feelsLikeElement = document.querySelector('.weather-detail:nth-child(3) .detail-value');
-const pressureElement = document.querySelector('.weather-detail:nth-child(4) .detail-value');
-
 const loadingSpinner = document.querySelector('.loading-spinner');
 const apiKey = '82005d27a116c2880c8f0fcb866998a0';
 
@@ -31,21 +26,75 @@ const weatherIcons = {
     Squall: 'unknown.png',
 };
 
+function WeatherDetails() {
+    const weatherDetailsContainer = document.querySelector('.weather-details');
+
+    const details = [
+        { icon: 'fa-solid fa-wind', label: 'Wind Speed', value: '--' },
+        { icon: 'icons/icons8-humidity-48.png', label: 'Humidity', value: '--', isImage: true },
+        { icon: 'icons/hot.png', label: 'Feels Like', value: '--', isImage: true },
+        { icon: 'icons/pressure.png', label: 'Pressure', value: '--', isImage: true },
+    ];
+
+    const valueContainers = {};
+
+    details.forEach(detail => {
+        const detailContainer = document.createElement('div');
+        detailContainer.classList.add('weather-detail');
+
+        const iconContainer = document.createElement('div');
+        iconContainer.classList.add('detail-icon');
+
+        if (detail.isImage) {
+            const iconImage = document.createElement('img');
+            iconImage.src = detail.icon;
+            iconImage.alt = detail.label;
+            iconContainer.appendChild(iconImage);
+        } else {
+            const iconElement = document.createElement('i');
+            iconElement.className = detail.icon;
+            iconContainer.appendChild(iconElement);
+        }
+
+        const valueContainer = document.createElement('div');
+        valueContainer.classList.add('detail-value');
+        valueContainer.textContent = detail.value;
+
+        const labelContainer = document.createElement('div');
+        labelContainer.classList.add('detail-label');
+        labelContainer.textContent = detail.label;
+
+        detailContainer.appendChild(iconContainer);
+        detailContainer.appendChild(valueContainer);
+        detailContainer.appendChild(labelContainer);
+
+        weatherDetailsContainer.appendChild(detailContainer);
+
+        valueContainers[detail.label.toLowerCase().replace(' ', '')] = valueContainer;
+    });
+
+    return valueContainers;
+}
+
+const detailValueElements = WeatherDetails();
+
 
 function displayWeatherData(data) {
     weatherInfo.style.display = 'block';
     temperatureElement.textContent = `${Math.round(data.main.temp)}°c`;
     descriptionElement.textContent = data.weather[0].description;
     locationElement.textContent = `${data.name}, ${data.sys.country}`;
-    windSpeedElement.textContent = `${data.wind.speed} m/s`;
-    humidityElement.textContent = `${data.main.humidity}%`;
-    feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
-    pressureElement.textContent = `${data.main.pressure} hPa`;
 
+    detailValueElements.windspeed.textContent = `${data.wind.speed} m/s`;
+    detailValueElements.humidity.textContent = `${data.main.humidity}%`;
+    detailValueElements.feelslike.textContent = `${Math.round(data.main.feels_like)}°C`;
+    detailValueElements.pressure.textContent = `${data.main.pressure} hPa`;
+   
     const weatherCondition = data.weather[0].main;
     const iconFilename = weatherIcons[weatherCondition] || 'default.png';
     weatherIcon.src = `icons/${iconFilename}`;
     weatherIcon.alt = weatherCondition;
+
     const sunrise = new Date(data.sys.sunrise * 1000);
     const sunset = new Date(data.sys.sunset * 1000);
     const now = new Date();
@@ -138,3 +187,5 @@ function getCurrentLocationWeather() {
 window.onload = function () {
     getCurrentLocationWeather();
 };
+
+
