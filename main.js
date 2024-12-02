@@ -140,8 +140,15 @@ searchButton.addEventListener('click', function () {
             errorMessage.textContent = 'city not found.';
             errorMessage.style.display = 'block';
             loadingSpinner.style.display = 'none';
-        });
+        });     
 });
+
+
+searchInput.addEventListener('keypress' , (e)=>{
+    if(e.key==='Enter'){
+        searchButton.click();
+    }
+})
 
 
 function fetchWeatherByCoordinates(lat, lon) {
