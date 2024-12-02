@@ -9,7 +9,6 @@ const locationElement = document.querySelector('.location');
 const loadingSpinner = document.querySelector('.loading-spinner');
 const apiKey = '82005d27a116c2880c8f0fcb866998a0';
 
-
 const weatherIcons = {
     Clear: '01d.png',
     Clouds: '04d.png',
@@ -26,6 +25,7 @@ const weatherIcons = {
     Squall: 'unknown.png',
 };
 
+
 function WeatherDetails() {
     const weatherDetailsContainer = document.querySelector('.weather-details');
 
@@ -35,6 +35,7 @@ function WeatherDetails() {
         { icon: 'icons/hot.png', label: 'Feels Like', value: '--', isImage: true },
         { icon: 'icons/pressure.png', label: 'Pressure', value: '--', isImage: true },
     ];
+
 
     const valueContainers = {};
 
@@ -73,6 +74,37 @@ function WeatherDetails() {
         valueContainers[detail.label.toLowerCase().replace(' ', '')] = valueContainer;
     });
 
+    const forecastButton = document.createElement('button');
+    forecastButton.textContent = 'Forecast';
+    forecastButton.classList.add('forecast-button');
+    weatherDetailsContainer.appendChild(forecastButton);
+
+    forecastButton.addEventListener('click', function () {
+        const city = searchInput.value.trim();
+        if (city) {
+            fetchHourlyForecast(city);
+        } else {
+            errorMessage.textContent = 'Please enter a valid city.';
+            errorMessage.style.display = 'block';
+        }
+    });
+
+
+    const closeButton = document.querySelector('.close-btn');
+    closeButton.addEventListener('click', function () {
+        const forecastModal = document.querySelector('.forecast-modal');
+        forecastModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function (event) {
+        const forecastModal = document.querySelector('.forecast-modal');
+        if (event.target === forecastModal) {
+            forecastModal.style.display = 'none';
+        }
+
+    });
+
+
     return valueContainers;
 }
 
@@ -90,7 +122,7 @@ function displayWeatherData(data) {
     detailValueElements.humidity.textContent = `${data.main.humidity}%`;
     detailValueElements.feelslike.textContent = `${Math.round(data.main.feels_like)}°C`;
     detailValueElements.pressure.textContent = `${data.main.pressure} hPa`;
-   
+
     const weatherCondition = data.weather[0].main;
     const iconFilename = weatherIcons[weatherCondition] || 'default.png';
     weatherIcon.src = `icons/${iconFilename}`;
@@ -116,15 +148,23 @@ searchButton.addEventListener('click', function () {
     weatherInfo.style.display = 'none';
     errorMessage.style.display = 'none';
 
+    loadingSpinner.style.display = 'block';
     if (city.trim() === '') {
         errorMessage.textContent = ' Enter a city name.';
         errorMessage.style.display = 'block';
+        loadingSpinner.style.display = 'none';
         return;
     }
 
     loadingSpinner.style.display = 'block';
+    fetchData('weather', city);
 
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`)
+});
+
+
+function fetchData(endPoint, city) {
+    fetch(`https://api.openweathermap.org/data/2.5/${endPoint}?q=${city}&appid=${apiKey}&units=metric`)
+
         .then(response => {
             if (!response.ok) {
                 throw new Error('City not found');
@@ -133,6 +173,7 @@ searchButton.addEventListener('click', function () {
         })
         .then(data => {
             displayWeatherData(data);
+            console.log(data);
             loadingSpinner.style.display = 'none';
         })
 
@@ -141,12 +182,95 @@ searchButton.addEventListener('click', function () {
             errorMessage.textContent = 'city not found.';
             errorMessage.style.display = 'block';
             loadingSpinner.style.display = 'none';
-        });     
-});
+        });
+}
+
+     function fetchHourlyForecast(city) {
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('City not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayHourlyForecast(data);
+        })
+        .catch(error => {
+            console.error('Error fetching forecast data:', error);
+            errorMessage.textContent = 'Unable to fetch forecast data. Please try again later.';
+            errorMessage.style.display = 'block';
+        });
+}
+
+// Display the 8-day forecast data inside the modal
+function displayHourlyForecast(data) {
+    const forecastContainer = document.querySelector('.forecast-container');
+    forecastContainer.innerHTML = ''; // Clear previous forecast
+
+    const forecastDays = {}; // Object to store forecast data for each day
+    let dayCount = 0; // Counter to ensure we only display 8 days
+
+    // Loop through the forecast data (it returns data for every 3 hours)
+    data.list.forEach(item => {
+        const date = new Date(item.dt * 1000); // Convert timestamp to Date object
+        const dateString = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+        // Ensure only 8 unique days are displayed
+        if (dayCount < 8 && !forecastDays[dateString]) {
+            forecastDays[dateString] = {
+                temp: item.main.temp,
+                description: item.weather[0].description,
+                icon: weatherIcons[item.weather[0].main] || 'default.png',
+            };
+            dayCount++;
+        }
+    });
+
+    // Loop through the forecastDays and create elements
+    Object.keys(forecastDays).forEach(dayKey => {
+        const dayData = forecastDays[dayKey];
+        const dayElement = document.createElement('div');
+        dayElement.classList.add('hourly-forecast-day');
+
+        // Create day label (e.g., "Mon, Dec 2")
+        const dayLabel = document.createElement('div');
+        dayLabel.classList.add('forecast-day');
+        dayLabel.textContent = dayKey;
+
+        // Create temperature element
+        const tempElement = document.createElement('div');
+        tempElement.classList.add('forecast-temperature');
+        tempElement.textContent = `${Math.round(dayData.temp)}°C`;
+
+        // Create weather description element
+        const descElement = document.createElement('div');
+        descElement.classList.add('forecast-description');
+        descElement.textContent = dayData.description;
+
+        // Create icon element
+        const iconElement = document.createElement('img');
+        iconElement.classList.add('forecast-icon');
+        iconElement.src = `icons/${dayData.icon}`;
+        iconElement.alt = dayData.description;
 
 
-searchInput.addEventListener('keypress' , (e)=>{
-    if(e.key==='Enter'){
+        dayElement.appendChild(dayLabel);
+        dayElement.appendChild(iconElement);
+        dayElement.appendChild(tempElement);
+        dayElement.appendChild(descElement);
+
+        forecastContainer.appendChild(dayElement);
+    });
+
+    const forecastModal = document.querySelector('.forecast-modal');
+    forecastModal.style.display = 'block';
+}
+
+
+
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
         searchButton.click();
     }
 })
@@ -171,18 +295,20 @@ function fetchWeatherByCoordinates(lat, lon) {
         });
 }
 
-
 function getCurrentLocationWeather() {
     if (navigator.geolocation) {
+        loadingSpinner.style.display = 'block';
         navigator.geolocation.getCurrentPosition(function (position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             console.log('Current position:', lat, lon);
             fetchWeatherByCoordinates(lat, lon);
+            loadingSpinner.style.display = 'none';
         }, function (error) {
             console.error('Error getting geolocation:', error);
             errorMessage.textContent = 'Unable to retrieve your location. Please try again or enter a city Name.';
             errorMessage.style.display = 'block';
+            loadingSpinner.style.display = 'none';
         });
     } else {
         errorMessage.textContent = 'Geolocation is not supported by this browser.';
@@ -195,5 +321,6 @@ function getCurrentLocationWeather() {
 window.onload = function () {
     getCurrentLocationWeather();
 };
+
 
 

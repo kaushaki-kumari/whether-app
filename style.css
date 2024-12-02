@@ -29,7 +29,6 @@
     .search-container {
         display: flex;
         justify-content: center;
-        margin-bottom: 20px;
     }
 
     .search-input {
@@ -162,15 +161,106 @@
     .error-message {
         color: red;
         font-size: 16px;
-        margin-top: 20px;
         display: none;
+        margin-top: 10px;
     }
 
 
     .loading-spinner i {
         font-size: 20px; 
         animation: spin 1s linear infinite; 
+        margin-top: 5px;
+
     }
+
+    .forecast-button{
+        background-color: #122d4a; 
+        font-size: 14px;
+        color: #ffff; 
+        height: 30px;
+        width: 80px; 
+        border-radius: 10px;
+        border: none;
+    }
+    .forecast-button:hover{
+        background-color: #15467c;
+        color: #cfdae7;
+        cursor: pointer;
+    }
+
+.forecast-modal {
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); 
+    z-index: 1000;
+}
+
+.forecast-modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+.forecast-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.hourly-forecast-day {
+    width: calc(100% / 4 - 20px);
+    margin-bottom: 20px;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
+.forecast-day {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.forecast-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+}
+
+.forecast-temperature {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.forecast-description {
+    font-size: 1rem;
+    color: #777;
+}
+
+    
+  
+
     
    
     @keyframes spin {
