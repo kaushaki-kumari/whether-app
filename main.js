@@ -36,7 +36,6 @@ function WeatherDetails() {
         { icon: 'icons/pressure.png', label: 'Pressure', value: '--', isImage: true },
     ];
 
-
     const valueContainers = {};
 
     details.forEach(detail => {
@@ -74,73 +73,97 @@ function WeatherDetails() {
         valueContainers[detail.label.toLowerCase().replace(' ', '')] = valueContainer;
     });
 
-    const forecastButton = document.createElement('button');
-    forecastButton.textContent = 'Forecast';
-    forecastButton.classList.add('forecast-button');
-    weatherDetailsContainer.appendChild(forecastButton);
 
-    forecastButton.addEventListener('click', function () {
-        const city = searchInput.value.trim();
-        if (city) {
-            fetchHourlyForecast(city);
-        } else {
-            errorMessage.textContent = 'Please enter a valid city.';
-            errorMessage.style.display = 'block';
-        }
-    });
-
-
-    const closeButton = document.querySelector('.close-btn');
-    closeButton.addEventListener('click', function () {
+    function setupForecastModal() {
+        const forecastButton = document.createElement('button');
+        forecastButton.textContent = 'Forecast';
+        forecastButton.classList.add('forecast-button');
+        weatherDetailsContainer.appendChild(forecastButton);
         const forecastModal = document.querySelector('.forecast-modal');
-        forecastModal.style.display = 'none';
-    });
+        const modalBackdrop = document.querySelector('#modalBackdrop');
 
-    window.addEventListener('click', function (event) {
-        const forecastModal = document.querySelector('.forecast-modal');
-        if (event.target === forecastModal) {
-            forecastModal.style.display = 'none';
+        if (forecastButton && forecastModal && modalBackdrop) {
+            forecastButton.addEventListener('click', function () {
+                errorMessage.style.display = 'none';
+                loadingSpinner.style.display = 'block';
+
+                const city = searchInput.value.trim();
+                if (city) {
+                    fetchHourlyForecast(city);
+                } else {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function (position) {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            console.log('Current position:', lat, lon);
+
+                            fetchHourlyForecastByCoordinates(lat, lon);
+                        }, function (error) {
+                            console.error('Error getting geolocation:', error);
+                            errorMessage.textContent = 'Unable to retrieve your location. Please try again.';
+                            errorMessage.style.display = 'block';
+                        });
+                    } else {
+                        errorMessage.textContent = 'Geolocation is not supported by this browser.';
+                        errorMessage.style.display = 'block';
+                    }
+                }
+
+                loadingSpinner.style.display = 'none';  // Hide loading spinner after fetching
+                forecastModal.style.display = 'block';  // Show forecast modal
+                modalBackdrop.style.display = 'block';  // Show modal backdrop
+            });
+
+            modalBackdrop.addEventListener('click', function () {
+                forecastModal.style.display = 'none';
+                modalBackdrop.style.display = 'none';
+            });
         }
+    }
 
-    });
 
-
+    setupForecastModal();
     return valueContainers;
 }
 
 const detailValueElements = WeatherDetails();
 
-
 function displayWeatherData(data) {
     errorMessage.style.display = 'none';
     weatherInfo.style.display = 'block';
-    temperatureElement.textContent = `${Math.round(data.main.temp)}°c`;
-    descriptionElement.textContent = data.weather[0].description;
-    locationElement.textContent = `${data.name}, ${data.sys.country}`;
+    if (data.main && data.weather && data.weather[0]) {
+        temperatureElement.textContent = `${Math.round(data.main.temp)}°C`;
+        descriptionElement.textContent = data.weather[0].description;
+        locationElement.textContent = `${data.name}, ${data.sys.country}`;
 
-    detailValueElements.windspeed.textContent = `${data.wind.speed} m/s`;
-    detailValueElements.humidity.textContent = `${data.main.humidity}%`;
-    detailValueElements.feelslike.textContent = `${Math.round(data.main.feels_like)}°C`;
-    detailValueElements.pressure.textContent = `${data.main.pressure} hPa`;
+        detailValueElements.windspeed.textContent = `${data.wind.speed} m/s`;
+        detailValueElements.humidity.textContent = `${data.main.humidity}%`;
+        detailValueElements.feelslike.textContent = `${Math.round(data.main.feels_like)}°C`;
+        detailValueElements.pressure.textContent = `${data.main.pressure} hPa`;
 
-    const weatherCondition = data.weather[0].main;
-    const iconFilename = weatherIcons[weatherCondition] || 'default.png';
-    weatherIcon.src = `icons/${iconFilename}`;
-    weatherIcon.alt = weatherCondition;
+        const weatherCondition = data.weather[0].main;
+        const iconFilename = weatherIcons[weatherCondition] || 'default.png';
+        weatherIcon.src = `icons/${iconFilename}`;
+        weatherIcon.alt = weatherCondition;
 
-    const sunrise = new Date(data.sys.sunrise * 1000);
-    const sunset = new Date(data.sys.sunset * 1000);
-    const now = new Date();
+        const sunrise = new Date(data.sys.sunrise * 1000);
+        const sunset = new Date(data.sys.sunset * 1000);
+        const now = new Date();
 
-
-    if (now >= sunrise && now <= sunset) {
-        document.body.style.backgroundImage = "url('https://images.unsplash.com/photo-1503803548695-c2a7b4a5b875?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHN1bnJpc2V8ZW58MHx8MHx8fDA%3D')";
+        if (now >= sunrise && now <= sunset) {
+            document.body.style.backgroundImage = "url('https://images.unsplash.com/photo-1503803548695-c2a7b4a5b875?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHN1bnJpc2V8ZW58MHx8MHx8fDA%3D')";
+        } else {
+            document.body.style.backgroundImage = "url('https://media.istockphoto.com/id/162515751/photo/moon-over-mountains.webp?a=1&b=1&s=612x612&w=0&k=20&c=Xp_CfaVfyn9yJvTZtXzRBdIABemq-dztHBUZ5ZYmqtU=')";
+        }
         document.body.style.backgroundSize = "cover";
     } else {
-        document.body.style.backgroundImage = "url('https://media.istockphoto.com/id/162515751/photo/moon-over-mountains.webp?a=1&b=1&s=612x612&w=0&k=20&c=Xp_CfaVfyn9yJvTZtXzRBdIABemq-dztHBUZ5ZYmqtU=')";
-        document.body.style.backgroundSize = "cover";
+        console.error('Incomplete weather data:', data);
+        errorMessage.textContent = 'Weather data is missing or incomplete.';
+        errorMessage.style.display = 'block';
+        loadingSpinner.style.display = 'none';
     }
 }
+
 
 searchButton.addEventListener('click', function () {
     const city = searchInput.value;
@@ -160,7 +183,6 @@ searchButton.addEventListener('click', function () {
     fetchData('weather', city);
 
 });
-
 
 function fetchData(endPoint, city) {
     fetch(`https://api.openweathermap.org/data/2.5/${endPoint}?q=${city}&appid=${apiKey}&units=metric`)
@@ -185,7 +207,7 @@ function fetchData(endPoint, city) {
         });
 }
 
-     function fetchHourlyForecast(city) {
+function fetchHourlyForecast(city) {
     fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`)
         .then(response => {
             if (!response.ok) {
@@ -203,78 +225,169 @@ function fetchData(endPoint, city) {
         });
 }
 
-// Display the 8-day forecast data inside the modal
+function fetchHourlyForecastByCoordinates(lat, lon) {
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Location not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayHourlyForecast(data);
+        })
+        .catch(error => {
+            console.error('Error fetching forecast data by coordinates:', error);
+            errorMessage.textContent = 'Unable to fetch forecast data. Please try again later.';
+            errorMessage.style.display = 'block';
+        });
+}
+
 function displayHourlyForecast(data) {
-    const forecastContainer = document.querySelector('.forecast-container');
-    forecastContainer.innerHTML = ''; // Clear previous forecast
+    const forecastModal = document.getElementById('forecastModal');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const chartCanvas = document.getElementById('hourlyForecastChart');
+    const tableBody = document.getElementById('forecastTableBody');
 
-    const forecastDays = {}; // Object to store forecast data for each day
-    let dayCount = 0; // Counter to ensure we only display 8 days
+    tableBody.innerHTML = '';
 
-    // Loop through the forecast data (it returns data for every 3 hours)
+    if (window.hourlyForecastChart && typeof window.hourlyForecastChart.destroy === 'function') {
+        window.hourlyForecastChart.destroy();
+        window.hourlyForecastChart = null;
+    }
+
+    // Check if the canvas element exists
+    if (!chartCanvas) {
+        console.error("Chart canvas element not found.");
+        return;
+    }
+
+   
+    const ctx = chartCanvas.getContext('2d');
+    ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);  // Clear the canvas
+    
+    // Get the hourly data (next 8 hours)
+    const hourlyData = data.list.slice(0, 8);
+    const hourlyWindSpeeds = hourlyData.map(item => Math.round(item.wind.speed));
+        const hourlyLabels = hourlyData.map(item => {
+        const date = new Date(item.dt * 1000);
+        return date.toLocaleTimeString([], { hour: '2-digit' });
+    });
+    
+    const hourlyTemps = hourlyData.map(item => Math.round(item.main.temp));
+
+    window.hourlyForecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: hourlyWindSpeeds,  
+            datasets: [{
+                label: 'Temperature (°C)',  
+                data: hourlyTemps,  
+                borderColor: 'red',  
+                borderWidth: 1,
+                fill: false,  
+                tension: 0.4,  
+                pointRadius: 1, 
+                yAxisID: 'y',  
+            }],
+        },
+        options: {
+            responsive: true,  
+            plugins: {
+                legend: { display: false },  
+            },
+            scales: {
+                x: {
+                    position: 'bottom',
+                    grid: {
+                        drawOnChartArea: false,  
+                        drawTicks: true,  
+                    },
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return hourlyWindSpeeds[index] + ' m/s';  
+                        }
+                    }
+                },
+                x1: {
+                    position: 'top',
+                    grid: {
+                        drawOnChartArea: false,  
+                    },  
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return hourlyLabels[index];  
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    min: 10,  
+                    max: 30,  
+                    grid: {
+                        drawOnChartArea: false, 
+                    },
+                    ticks: {
+                        stepSize: 5, 
+                        callback: function(value) {
+                            return value + ' °C'; 
+                        },
+                        color: 'red'  
+                    }
+                },
+            },
+        },
+    });
+    
+    // Prepare Table Data (Daily Forecast)
+    const forecastDays = {};
+    let dayCount = 0;
+
     data.list.forEach(item => {
-        const date = new Date(item.dt * 1000); // Convert timestamp to Date object
-        const dateString = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const date = new Date(item.dt * 1000);
+        const dayString = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-        // Ensure only 8 unique days are displayed
-        if (dayCount < 8 && !forecastDays[dateString]) {
-            forecastDays[dateString] = {
-                temp: item.main.temp,
-                description: item.weather[0].description,
+        if (dayCount < 8 && !forecastDays[dayString]) {
+            forecastDays[dayString] = {
+                temp: Math.round(item.main.temp),
                 icon: weatherIcons[item.weather[0].main] || 'default.png',
+                description: item.weather[0].description || "No description available"
             };
             dayCount++;
         }
     });
 
-    // Loop through the forecastDays and create elements
-    Object.keys(forecastDays).forEach(dayKey => {
-        const dayData = forecastDays[dayKey];
-        const dayElement = document.createElement('div');
-        dayElement.classList.add('hourly-forecast-day');
-
-        // Create day label (e.g., "Mon, Dec 2")
-        const dayLabel = document.createElement('div');
-        dayLabel.classList.add('forecast-day');
-        dayLabel.textContent = dayKey;
-
-        // Create temperature element
-        const tempElement = document.createElement('div');
-        tempElement.classList.add('forecast-temperature');
-        tempElement.textContent = `${Math.round(dayData.temp)}°C`;
-
-        // Create weather description element
-        const descElement = document.createElement('div');
-        descElement.classList.add('forecast-description');
-        descElement.textContent = dayData.description;
-
-        // Create icon element
-        const iconElement = document.createElement('img');
-        iconElement.classList.add('forecast-icon');
-        iconElement.src = `icons/${dayData.icon}`;
-        iconElement.alt = dayData.description;
-
-
-        dayElement.appendChild(dayLabel);
-        dayElement.appendChild(iconElement);
-        dayElement.appendChild(tempElement);
-        dayElement.appendChild(descElement);
-
-        forecastContainer.appendChild(dayElement);
+    // Add forecast data to the table
+    Object.keys(forecastDays).forEach(day => {
+        const dayData = forecastDays[day];
+        console.log(dayData);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${day}</td>
+            <td class="forecast-icon"><img src="icons/${dayData.icon}" alt="Weather icon" >${dayData.temp}°C</td>
+            <td>${dayData.description}</td>
+        `;
+        tableBody.appendChild(row);
     });
 
-    const forecastModal = document.querySelector('.forecast-modal');
-    forecastModal.style.display = 'block';
+    if (forecastModal && modalBackdrop) {
+        forecastModal.style.display = 'block';
+        modalBackdrop.style.display = 'block';
+    } else {
+        console.error("Modal or backdrop not found.");
+    }
+
+    modalBackdrop.addEventListener('click', () => {
+        forecastModal.style.display = 'none';
+        modalBackdrop.style.display = 'none';
+    });
 }
-
-
 
 searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         searchButton.click();
     }
 })
-
 
 function fetchWeatherByCoordinates(lat, lon) {
     fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
@@ -284,14 +397,22 @@ function fetchWeatherByCoordinates(lat, lon) {
             }
             return response.json();
         })
-
         .then(data => {
-            displayWeatherData(data);
+            console.log(data);
+            if (data.main && data.weather && data.weather[0]) {
+                displayWeatherData(data);
+            } else {
+                console.error('Weather data is missing or incomplete:', data);
+                errorMessage.textContent = 'Weather data is missing or incomplete.';
+                errorMessage.style.display = 'block';
+                loadingSpinner.style.display = 'none';
+            }
         })
         .catch(error => {
             console.error('Error fetching weather data by coordinates:', error);
             errorMessage.textContent = 'Unable to fetch weather data. Please try again later.';
             errorMessage.style.display = 'block';
+            loadingSpinner.style.display = 'none';
         });
 }
 
@@ -316,7 +437,6 @@ function getCurrentLocationWeather() {
         loadingSpinner.style.display = 'none';
     }
 }
-
 
 window.onload = function () {
     getCurrentLocationWeather();

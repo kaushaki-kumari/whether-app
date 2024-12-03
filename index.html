@@ -34,15 +34,28 @@
       <i class="fa-solid fa-spinner"></i>
     </div>
 
-    <div class="forecast-modal">
-      <div class="forecast-modal-content">
-        <span class="close-btn">&times;</span>
-        <div class="forecast-container"></div>
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="forecast-modal" id="forecastModal">
+      <div class="forecast-content">
+        <!-- Chart Container -->
+        <div class="chart-container">
+          <h2>Hourly forecast</h2>
+          <canvas id="hourlyForecastChart"></canvas>
+        </div>
+        <!-- Table Container -->
+        <div class="table-container">
+          <h2>6-days forecast</h2>
+          <table class="forecast-table">
+            <tbody id="forecastTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
+
     <div class="error-message" style="display: none;"> </div>
   </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script src="main.js"></script>
 </body>
