@@ -25,7 +25,7 @@ const weatherIcons = {
     Squall: 'unknown.png',
 };
 
-const BASE_URL = `https://api.openweathermap.org`;
+const BASE_URL = `https://api.openweathermap.org/data/2.5`;
 
 function weatherInformation() {
     const weatherDetailsContainer = document.querySelector('.weather-details');
@@ -186,7 +186,7 @@ searchButton.addEventListener('click', function () {
 });
 
 function fetchData(endPoint, city) {
-    fetch(`${BASE_URL}/data/2.5/${endPoint}?q=${city}&appid=${apiKey}&units=metric`)
+    fetch(`${BASE_URL}/${endPoint}?q=${city}&appid=${apiKey}&units=metric`)
 
         .then(response => {
             if (!response.ok) {
@@ -209,7 +209,7 @@ function fetchData(endPoint, city) {
 }
 
 function fetchHourlyForecast(city) {
-    const url = `${BASE_URL}/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`
+    const url = `${BASE_URL}/forecast?q=${city}&appid=${apiKey}&units=metric`
     fetch(url)
         .then(response => {
             if (!response.ok) {
@@ -228,7 +228,7 @@ function fetchHourlyForecast(city) {
 }
 
 function fetchHourlyForecastByCoordinates(lat, lon) {
-    const url = `${BASE_URL}/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+    const url = `${BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
     fetch(url)
         .then(response => {
             if (!response.ok) {
@@ -393,7 +393,7 @@ searchInput.addEventListener('keypress', (e) => {
 })
 
 function fetchWeatherByCoordinates(lat, lon) {
-    fetch(`${BASE_URL}/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
+    fetch(`${BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Location not found');
