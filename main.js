@@ -26,7 +26,7 @@ const weatherIcons = {
 };
 
 
-function WeatherDetails() {
+function weatherInformation() {
     const weatherDetailsContainer = document.querySelector('.weather-details');
 
     const details = [
@@ -126,7 +126,7 @@ function WeatherDetails() {
     return valueContainers;
 }
 
-const detailValueElements = WeatherDetails();
+const detailValueElements = weatherInformation();
 
 function displayWeatherData(data) {
     errorMessage.style.display = 'none';
@@ -208,7 +208,8 @@ function fetchData(endPoint, city) {
 }
 
 function fetchHourlyForecast(city) {
-    fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`)
+    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`
+    fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error('City not found');
@@ -226,7 +227,8 @@ function fetchHourlyForecast(city) {
 }
 
 function fetchHourlyForecastByCoordinates(lat, lon) {
-    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
+    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+    fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Location not found');
@@ -262,83 +264,83 @@ function displayHourlyForecast(data) {
         return;
     }
 
-   
+
     const ctx = chartCanvas.getContext('2d');
     ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);  // Clear the canvas
-    
+
     // Get the hourly data (next 8 hours)
     const hourlyData = data.list.slice(0, 8);
     const hourlyWindSpeeds = hourlyData.map(item => Math.round(item.wind.speed));
-        const hourlyLabels = hourlyData.map(item => {
+    const hourlyLabels = hourlyData.map(item => {
         const date = new Date(item.dt * 1000);
         return date.toLocaleTimeString([], { hour: '2-digit' });
     });
-    
+
     const hourlyTemps = hourlyData.map(item => Math.round(item.main.temp));
 
     window.hourlyForecastChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: hourlyWindSpeeds,  
+            labels: hourlyWindSpeeds,
             datasets: [{
-                label: 'Temperature (°C)',  
-                data: hourlyTemps,  
-                borderColor: 'red',  
+                label: 'Temperature (°C)',
+                data: hourlyTemps,
+                borderColor: 'red',
                 borderWidth: 1,
-                fill: false,  
-                tension: 0.4,  
-                pointRadius: 1, 
-                yAxisID: 'y',  
+                fill: false,
+                tension: 0.4,
+                pointRadius: 1,
+                yAxisID: 'y',
             }],
         },
         options: {
-            responsive: true,  
+            responsive: true,
             plugins: {
-                legend: { display: false },  
+                legend: { display: false },
             },
             scales: {
                 x: {
                     position: 'bottom',
                     grid: {
-                        drawOnChartArea: false,  
-                        drawTicks: true,  
+                        drawOnChartArea: false,
+                        drawTicks: true,
                     },
                     ticks: {
-                        callback: function(value, index, values) {
-                            return hourlyWindSpeeds[index] + ' m/s';  
+                        callback: function (index) {
+                            return hourlyWindSpeeds[index] + ' m/s';
                         }
                     }
                 },
                 x1: {
                     position: 'top',
                     grid: {
-                        drawOnChartArea: false,  
-                    },  
+                        drawOnChartArea: false,
+                    },
                     ticks: {
-                        callback: function(value, index, values) {
-                            return hourlyLabels[index];  
+                        callback: function (value, index, values) {
+                            return hourlyLabels[index];
                         }
                     }
                 },
                 y: {
                     beginAtZero: false,
-                    min: 10,  
-                    max: 30,  
+                    min: 10,
+                    max: 30,
                     grid: {
-                        drawOnChartArea: false, 
+                        drawOnChartArea: false,
                     },
                     ticks: {
-                        stepSize: 5, 
-                        callback: function(value) {
-                            return value + ' °C'; 
+                        stepSize: 5,
+                        callback: function (value) {
+                            return value + ' °C';
                         },
-                        color: 'red'  
+                        color: 'red'
                     }
                 },
             },
         },
     });
-    
+
     // Prepare Table Data (Daily Forecast)
     const forecastDays = {};
     let dayCount = 0;
@@ -416,26 +418,42 @@ function fetchWeatherByCoordinates(lat, lon) {
         });
 }
 
+
+function getCoordinates() {
+    return new Promise((resolve, reject) => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    console.log('Current position:', lat, lon);
+                    resolve({ lat, lon });
+                },
+                error => {
+                    console.error('Error getting geolocation:', error);
+                    reject(new Error('Unable to retrieve your location. Please try again or enter a city name.'));
+                }
+            );
+        } else {
+            reject(new Error('Geolocation is not supported by this browser.'));
+        }
+    });
+}
+
 function getCurrentLocationWeather() {
-    if (navigator.geolocation) {
-        loadingSpinner.style.display = 'block';
-        navigator.geolocation.getCurrentPosition(function (position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            console.log('Current position:', lat, lon);
+    loadingSpinner.style.display = 'block';
+    getCoordinates()
+        .then(({ lat, lon }) => {
             fetchWeatherByCoordinates(lat, lon);
-            loadingSpinner.style.display = 'none';
-        }, function (error) {
-            console.error('Error getting geolocation:', error);
-            errorMessage.textContent = 'Unable to retrieve your location. Please try again or enter a city Name.';
+        })
+        .catch(error => {
+            console.error(error.message);
+            errorMessage.textContent = error.message;
             errorMessage.style.display = 'block';
+        })
+        .finally(() => {
             loadingSpinner.style.display = 'none';
         });
-    } else {
-        errorMessage.textContent = 'Geolocation is not supported by this browser.';
-        errorMessage.style.display = 'block';
-        loadingSpinner.style.display = 'none';
-    }
 }
 
 window.onload = function () {
